@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🦔 두더지 잡기</title>
+  <style>
+    :root {
+      --dark: #1a1a2e;
+      --mid: #16213e;
+      --deep: #0f3460;
+      --accent: #38bdf8;
+      --text: #e0e0e0;
+      --muted: #8899aa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    nav {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 40px;
+      background: rgba(22,33,62,0.9);
+      border-bottom: 1px solid var(--deep);
+      backdrop-filter: blur(8px);
+    }
+
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .back-link:hover { color: var(--text); }
+    .nav-sep { color: var(--deep); }
+    .nav-title { font-weight: 700; font-size: 1rem; }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 { font-size: 2rem; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+    /* SCORE */
+    .score-board {
+      display: flex;
+      gap: 32px;
+      background: var(--mid);
+      border: 1px solid var(--deep);
+      border-radius: 12px;
+      padding: 14px 36px;
+      margin-bottom: 28px;
+    }
+
+    .score-item { text-align: center; }
+    .score-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .score-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+
+    .time-bar-wrap {
+      width: 340px;
+      height: 8px;
+      background: var(--mid);
+      border-radius: 999px;
+      border: 1px solid var(--deep);
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+
+    #time-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #0284c7);
+      border-radius: 999px;
+      transition: width 0.5s linear;
+      width: 100%;
+    }
+
+    /* DIFFICULTY TABS */
+    .diff-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .diff-tab {
+      padding: 7px 20px;
+      border-radius: 999px;
+      border: 1px solid var(--deep);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .diff-tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* GRID */
+    #mole-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .hole {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 60%, #3b2000, #1a0d00);
+      border: 3px solid #5a3200;
+      transition: transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .hole .mole {
+      display: none;
+      font-size: 2.4rem;
+      transition: transform 0.1s;
+      pointer-events: none;
+    }
+
+    .hole.active {
+      background: radial-gradient(circle at 50% 55%, #5a3000, #2a1500);
+    }
+
+    .hole.active .mole { display: block; }
+
+    .hole.hit .mole {
+      transform: scale(1.5) rotate(15deg);
+    }
+
+    /* +10 pop */
+    .pop {
+      position: absolute;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #4ade80;
+      pointer-events: none;
+      animation: popUp 0.6s ease forwards;
+    }
+
+    @keyframes popUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+    }
+
+    /* CONTROLS */
+    .controls {
+      margin-top: 24px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+    .btn-start { background: var(--accent); color: #000; }
+
+    .hint { margin-top: 14px; font-size: 0.8rem; color: var(--muted); text-align: center; }
+
+    /* RESULT */
+    #result-banner {
+      display: none;
+      margin-top: 20px;
+      background: var(--mid);
+      border: 1px solid var(--deep);
+      border-radius: 12px;
+      padding: 20px 40px;
+      text-align: center;
+    }
+
+    #result-banner h2 { margin-bottom: 6px; }
+    #result-banner p { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="back-link">← 홈으로</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-title">🦔 두더지 잡기</span>
+</nav>
+
+<main>
+  <h1>🦔 두더지 잡기</h1>
+  <p class="subtitle">두더지가 나오면 빠르게 클릭하세요!</p>
+
+  <div class="score-board">
+    <div class="score-item">
+      <div class="score-label">점수</div>
+      <div class="score-value" id="score">0</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">남은 시간</div>
+      <div class="score-value" id="time-left">30s</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">최고</div>
+      <div class="score-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="time-bar-wrap">
+    <div id="time-bar"></div>
+  </div>
+
+  <div class="diff-tabs">
+    <button class="diff-tab active" onclick="setDiff('easy',this)">쉬움</button>
+    <button class="diff-tab" onclick="setDiff('normal',this)">보통</button>
+    <button class="diff-tab" onclick="setDiff('hard',this)">어려움</button>
+  </div>
+
+  <div id="mole-grid"></div>
+
+  <div class="controls">
+    <button class="btn btn-start" onclick="startGame()">시작 / 재시작</button>
+  </div>
+
+  <p class="hint">두더지를 클릭하면 +10점! 30초 안에 최대한 많이 잡으세요</p>
+
+  <div id="result-banner">
+    <h2>🎉 게임 종료!</h2>
+    <p id="result-text"></p>
+  </div>
+</main>
+
+<script>
+const DIFFS = {
+  easy:   { gridSize: 3, interval: 900, duration: 1000 },
+  normal: { gridSize: 3, interval: 650, duration: 750  },
+  hard:   { gridSize: 4, interval: 450, duration: 550  },
+};
+
+let diff = DIFFS.easy;
+let score = 0, best = 0, timeLeft = 30, running = false;
+let moleIv = null, timerIv = null;
+const GAME_TIME = 30;
+
+function setDiff(key, tab) {
+  diff = DIFFS[key];
+  document.querySelectorAll('.diff-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  buildGrid();
+}
+
+function buildGrid() {
+  const grid = document.getElementById('mole-grid');
+  const n = diff.gridSize;
+  const holeSize = n === 4 ? 84 : 100;
+  grid.style.gridTemplateColumns = `repeat(${n}, ${holeSize}px)`;
+  grid.innerHTML = '';
+
+  for (let i = 0; i < n * n; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.style.width = holeSize + 'px';
+    hole.style.height = holeSize + 'px';
+    const mole = document.createElement('span');
+    mole.className = 'mole';
+    mole.style.fontSize = (holeSize * 0.36) + 'px';
+    mole.textContent = '🦔';
+    hole.appendChild(mole);
+    hole.addEventListener('click', () => hitMole(hole));
+    hole.addEventListener('touchstart', e => { e.preventDefault(); hitMole(hole); }, {passive:false});
+    grid.appendChild(hole);
+  }
+}
+
+function startGame() {
+  clearInterval(moleIv); clearInterval(timerIv);
+  document.querySelectorAll('.hole').forEach(h => h.classList.remove('active','hit'));
+  score = 0; timeLeft = GAME_TIME; running = true;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('time-left').textContent = GAME_TIME + 's';
+  document.getElementById('time-bar').style.width = '100%';
+  document.getElementById('result-banner').style.display = 'none';
+
+  moleIv = setInterval(popMole, diff.interval);
+
+  timerIv = setInterval(() => {
+    timeLeft--;
+    document.getElementById('time-left').textContent = timeLeft + 's';
+    document.getElementById('time-bar').style.width = (timeLeft / GAME_TIME * 100) + '%';
+
+    if (timeLeft <= 5) document.getElementById('time-bar').style.background = 'linear-gradient(90deg,#e94560,#b91c1c)';
+
+    if (timeLeft <= 0) {
+      clearInterval(moleIv); clearInterval(timerIv);
+      running = false;
+      document.querySelectorAll('.hole').forEach(h => h.classList.remove('active'));
+      if (score > best) best = score;
+      document.getElementById('best').textContent = best;
+      const banner = document.getElementById('result-banner');
+      document.getElementById('result-text').textContent = `최종 점수: ${score}점 ${score >= best && score > 0 ? '🏆 최고 기록!' : ''}`;
+      banner.style.display = 'block';
+      document.getElementById('time-bar').style.background = 'linear-gradient(90deg,#38bdf8,#0284c7)';
+    }
+  }, 1000);
+}
+
+function popMole() {
+  const holes = [...document.querySelectorAll('.hole')].filter(h => !h.classList.contains('active'));
+  if (!holes.length) return;
+  const hole = holes[Math.floor(Math.random() * holes.length)];
+  hole.classList.add('active');
+  setTimeout(() => hole.classList.remove('active', 'hit'), diff.duration + Math.random() * 200);
+}
+
+function hitMole(hole) {
+  if (!running || !hole.classList.contains('active')) return;
+  hole.classList.add('hit');
+  hole.classList.remove('active');
+  score += 10;
+  document.getElementById('score').textContent = score;
+
+  // +10 pop animation
+  const pop = document.createElement('div');
+  pop.className = 'pop';
+  pop.textContent = '+10';
+  pop.style.left = '50%';
+  pop.style.top = '20%';
+  pop.style.transform = 'translateX(-50%)';
+  hole.appendChild(pop);
+  setTimeout(() => pop.remove(), 600);
+
+  setTimeout(() => hole.classList.remove('hit'), 200);
+}
+
+buildGrid();
+</script>
+</body>
+</html>
