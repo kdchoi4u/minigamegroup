@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "GitHub에 자동 커밋 중...",
+            "command": "INPUT=$(cat); FILE=$(node -e \"let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>{ const j=JSON.parse(d); process.stdout.write(j.tool_input&&j.tool_input.file_path||j.tool_response&&j.tool_response.filePath||''); });\" <<< \"$INPUT\"); FNAME=$(basename \"$FILE\"); cd \"C:/Users/Hansei/Desktop/claude\" && git add \"$FILE\" 2>/dev/null && git diff --cached --quiet || (git commit -m \"auto: update $FNAME\" && git push origin main) 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
